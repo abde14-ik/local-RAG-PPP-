@@ -1,5 +1,6 @@
 import streamlit as st
 import fitz  # PyMuPDF for PDF preview and page selection (new added feature)
+import html
 from app import LocalRAGApp  # importing app.py
 
 st.set_page_config(page_title="Local RAG QA", layout="wide", page_icon="")
@@ -136,6 +137,7 @@ st.markdown(
         font-size: 0.95rem;
         line-height: 1.7;
         color: #2D2D2D;
+        white-space: pre-wrap;
     }
 
     .response-content strong {
@@ -258,13 +260,9 @@ if uploaded_file:
             full_text = ""
             for chunk in app.chain.stream(question):
                 full_text += chunk
+                safe_text = html.escape(full_text)
                 placeholder.markdown(
-                    f"""
-                    <div class="response-block">
-                        <div class="response-label">Answer</div>
-                        <div class="response-content">{full_text}</div>
-                    </div>
-                    """,
+                    "<div class=\"response-block\"><div class=\"response-label\">Answer</div><div class=\"response-content\">{}</div></div>".format(safe_text),
                     unsafe_allow_html=True,
                 )
 
@@ -281,23 +279,16 @@ if uploaded_file:
             )
             if pages:
                 pills = " ".join(
-                    f"<span class='source-pill'>Page {p + 1}</span>" for p in pages
+                    "<span class='source-pill'>Page {}</span>".format(p + 1) for p in pages
                 )
-                source_html = f"""
-                <div class="response-label" style="margin-top: 1rem;">Sources</div>
-                <div>{pills}</div>
-                """
+                source_html = "<div class=\"response-label\" style=\"margin-top: 1rem;\">Sources</div><div>{}</div>".format(pills)
         except Exception as e:
             # In case of any retrieval error, just skip showing sources
             source_html = ""
 
-        final_html = f"""
-        <div class="response-block">
-            <div class="response-label">Answer</div>
-            <div class="response-content">{full_text}</div>
-            {source_html}
-        </div>
-        """
+        safe_final_text = html.escape(full_text)
+        final_html = "<div class=\"response-block\"><div class=\"response-label\">Answer</div><div class=\"response-content\">{}</div>{}</div>".format(safe_final_text, source_html)
+
         placeholder.markdown(final_html, unsafe_allow_html=True)
 
     st.markdown("---")
@@ -319,7 +310,10 @@ if uploaded_file:
                     with open("summaries.txt", "r", encoding="utf-8") as f:
                         summaries = f.read()
                     st.success("Summary generated!")
-                    st.text_area("Summaries", summaries, height=400)
+                    safe_summaries = html.escape(summaries)
+                    summary_html = "<div class=\"response-block\"><div class=\"response-label\">Summary</div><div class=\"response-content\">{}</div></div>".format(safe_summaries)
+
+                    st.markdown(summary_html, unsafe_allow_html=True)
 
                     st.download_button(
                         label="Download Summary (.txt)",
@@ -356,7 +350,10 @@ if uploaded_file:
                 summaries = app.summarize_selected_pages("temp.pdf", [p - 1 for p in page_selection])
                 full_summary = "\n\n".join(summaries)
                 st.success("Summary generated for selected pages!")
-                st.text_area("Summaries of Selected Pages", full_summary, height=400)
+                safe_full_summary = html.escape(full_summary)
+                summary_pages_html = "<div class=\"response-block\"><div class=\"response-label\">Summary</div><div class=\"response-content\">{}</div></div>".format(safe_full_summary)
+
+                st.markdown(summary_pages_html, unsafe_allow_html=True)
 
                 st.download_button(
                     "Download Selected Summary",
