@@ -4,7 +4,6 @@ langchain-community
 langchain-core
 langchain-text-splitters
 pymupdf
-PyPDF2
 chromadb
 unstructured[all-docs]
 prometheus_client
